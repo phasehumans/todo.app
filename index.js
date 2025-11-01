@@ -4,11 +4,11 @@ const jwt = require('jsonwebtoken')
 const { default: mongoose } = require('mongoose')
 const JWT_SECRET = "shhh"
 const bcrypt = require('bcrypt')
-const { use } = require('react')
+const {z} = require('zod')
+const dotenv = require('dotenv')
 
-mongoose.connect(
-  "mongodb+srv://chaitanya:CtGXOikbQ2T4ynux@cluster0.4fprs4w.mongodb.net/devboard"
-);
+dotenv.config()
+mongoose.connect(process.env.MONGO_URL);
 
 const app = express()
 app.use(express.json())
@@ -30,6 +30,22 @@ function auth (req, res, next){
 }
 
 app.post('/signup', async (req, res) =>{
+    const requiredBody = z.object({
+        email : z.email().string().min(3).max(20),
+        name : z.string().min(3).max(20),
+        password : z.string().min(3).max(15)
+    })
+
+    const parseData = requiredBody.safeParse(req.body)
+
+    if(!parseData.success){
+        res.json({
+            message : "incorrect format",
+            error : parseData.error
+        })
+        return
+    }
+
     const name = req.body.name
     const email = req.body.email
     const password = req.body.password
